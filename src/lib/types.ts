@@ -14,9 +14,10 @@ export interface TargetModel {
   name: string;
   provider: 'AMD_ROCm_vLLM' | 'AMD_Cloud_Inference' | 'Frontier_Cloud';
   hardware: 'AMD Instinct™ MI300X' | 'AMD Instinct™ MI250' | 'Cloud API Cluster';
-  costPer1kTokens: number; // in USD
-  avgLatencyMs: number;
-  throughputTokensPerSec: number;
+  costPer1kTokens: number; // in USD (derived from continuous batch compute rental)
+  baselineTtftMs: number; // Published hardware baseline Time-To-First-Token
+  singleStreamTokensPerSec: number; // Single-stream decode throughput (154 tok/s)
+  aggregateBatchTokensPerSec: number; // Continuous batching throughput at 32 concurrency (~4,928 tok/s)
   isLocalAMD: boolean;
 }
 
@@ -27,9 +28,11 @@ export interface RouteDecision {
   policy: RoutingPolicy;
   complexity: PromptComplexity;
   tokenCount: number;
-  executionTimeMs: number;
-  routingOverheadMs: number; // Real CPU latency to analyze and route (in ms)
-  estimatedTtftMs: number; // Hardware Time-To-First-Token (in ms)
+  routingOverheadMs: number; // Empirically measured CPU wall-clock dispatch time
+  baselineHardwareTtftMs: number; // Published hardware baseline TTFT (18ms for MI300X, 780ms for Cloud API)
+  liveInferenceLatencyMs?: number; // Actual measured round-trip time if live ROCm vLLM is connected
+  isLiveInference: boolean; // True if executed against active vLLM backend
+  executionTimeMs: number; // Effective response time (routingOverheadMs + baselineHardwareTtftMs or liveInferenceLatencyMs)
   estimatedCost: number;
   cloudEquivalentCost: number;
   dollarSaved: number;

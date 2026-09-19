@@ -34,6 +34,9 @@ test('Engine: routes developer code prompt to local AMD ROCm MI300X', () => {
   const decision = routePrompt(codePrompt, 'COST_OPTIMIZED');
   assert.strictEqual(decision.selectedModel.id, 'amd-llama3-8b-mi300x');
   assert.strictEqual(decision.selectedModel.isLocalAMD, true);
+  assert.strictEqual(decision.selectedModel.singleStreamTokensPerSec, 154);
+  assert.strictEqual(decision.baselineHardwareTtftMs, 18);
+  assert.ok(decision.routingOverheadMs < 2.0, 'Router CPU overhead must be sub-2ms');
   assert.ok(decision.percentSaved > 50);
   assert.ok(decision.dollarSaved > 0);
 });

@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     // Optional Live AMD ROCm vLLM Proxy Forwarding
     const liveInferenceUrl = process.env.AMD_ROCM_INFERENCE_URL;
     if (liveInferenceUrl && decision.selectedModel.isLocalAMD) {
+      const liveStart = performance.now();
       try {
         const vllmResponse = await fetch(liveInferenceUrl, {
           method: 'POST',
@@ -31,12 +32,16 @@ export async function POST(req: NextRequest) {
           }),
           signal: AbortSignal.timeout(5000)
         });
+        const measuredLatencyMs = Number((performance.now() - liveStart).toFixed(1));
         if (vllmResponse.ok) {
           const vllmData = await vllmResponse.json();
           const generatedContent = vllmData.choices?.[0]?.message?.content;
           if (generatedContent) {
             decision.responsePreview = generatedContent;
           }
+          decision.isLiveInference = true;
+          decision.liveInferenceLatencyMs = measuredLatencyMs;
+          decision.executionTimeMs = Number((decision.routingOverheadMs + measuredLatencyMs).toFixed(1));
         }
       } catch {
         // Transparent fallback to simulated preview if backend is offline

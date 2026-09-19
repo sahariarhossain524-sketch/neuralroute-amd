@@ -7,9 +7,10 @@ export const REGISTERED_MODELS: TargetModel[] = [
     name: 'Meta Llama-3-8B-Instruct (AMD ROCm 6.2)',
     provider: 'AMD_ROCm_vLLM',
     hardware: 'AMD Instinct™ MI300X',
-    costPer1kTokens: 0.00015,
-    avgLatencyMs: 18,
-    throughputTokensPerSec: 154,
+    costPer1kTokens: 0.00015, // $0.15 per 1M tokens (Derived: $2.75/hr rental ÷ 18M continuous batch tokens)
+    baselineTtftMs: 18, // Published hardware baseline TTFT for local AMD MI300X
+    singleStreamTokensPerSec: 154, // Single-user interactive decode speed
+    aggregateBatchTokensPerSec: 4928, // Continuous batching throughput (32 concurrency)
     isLocalAMD: true
   },
   {
@@ -18,8 +19,9 @@ export const REGISTERED_MODELS: TargetModel[] = [
     provider: 'AMD_ROCm_vLLM',
     hardware: 'AMD Instinct™ MI250',
     costPer1kTokens: 0.00012,
-    avgLatencyMs: 24,
-    throughputTokensPerSec: 122,
+    baselineTtftMs: 24,
+    singleStreamTokensPerSec: 122,
+    aggregateBatchTokensPerSec: 3904,
     isLocalAMD: true
   },
   {
@@ -27,9 +29,10 @@ export const REGISTERED_MODELS: TargetModel[] = [
     name: 'Frontier DeepSeek-R1 / GPT-4o Class',
     provider: 'Frontier_Cloud',
     hardware: 'Cloud API Cluster',
-    costPer1kTokens: 0.00500,
-    avgLatencyMs: 780,
-    throughputTokensPerSec: 32,
+    costPer1kTokens: 0.00500, // $5.00 blended per 1M tokens ($2.50 in / $10.00 out)
+    baselineTtftMs: 780, // Average network round-trip + cloud queue wait time
+    singleStreamTokensPerSec: 32,
+    aggregateBatchTokensPerSec: 32,
     isLocalAMD: false
   }
 ];
@@ -52,7 +55,7 @@ export function routePrompt(
     selectedModel = complexity.score >= 0.40 ? REGISTERED_MODELS[2] : REGISTERED_MODELS[0];
   }
 
-  // Measure actual router gateway dispatch overhead
+  // Measure actual router gateway dispatch overhead in CPU wall-clock
   const routingOverheadMs = Number((performance.now() - startTime).toFixed(3));
 
   // Separated Input / Output Token Pricing Math
@@ -65,7 +68,7 @@ export function routePrompt(
   const cloudOutputCost = (outputTokens / 1_000_000) * 10.00;
   const cloudEquivalentCost = Number((cloudInputCost + cloudOutputCost).toFixed(6));
 
-  // AMD ROCm Local MI300X: Flat $0.15 / 1M Total Tokens
+  // AMD ROCm Local MI300X: Flat $0.15 / 1M Total Tokens (under enterprise continuous batching)
   const actualCost = selectedModel.isLocalAMD
     ? Number(((totalTokens / 1_000_000) * 0.15).toFixed(6))
     : cloudEquivalentCost;
@@ -75,8 +78,8 @@ export function routePrompt(
     ? Number((((cloudEquivalentCost - actualCost) / cloudEquivalentCost) * 100).toFixed(1))
     : 0;
 
-  const estimatedTtftMs = selectedModel.avgLatencyMs;
-  const totalExecutionTimeMs = Number((routingOverheadMs + estimatedTtftMs).toFixed(1));
+  const baselineHardwareTtftMs = selectedModel.baselineTtftMs;
+  const totalExecutionTimeMs = Number((routingOverheadMs + baselineHardwareTtftMs).toFixed(1));
 
   return {
     id: `RTE-${Date.now().toString(36).toUpperCase()}`,
@@ -85,9 +88,10 @@ export function routePrompt(
     policy,
     complexity,
     tokenCount: totalTokens,
-    executionTimeMs: totalExecutionTimeMs,
     routingOverheadMs,
-    estimatedTtftMs,
+    baselineHardwareTtftMs,
+    isLiveInference: false,
+    executionTimeMs: totalExecutionTimeMs,
     estimatedCost: actualCost,
     cloudEquivalentCost,
     dollarSaved,
