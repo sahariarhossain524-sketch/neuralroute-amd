@@ -4,7 +4,8 @@
 **Challenge**: Lablab x AMD AI Academy Challenge (2026)  
 **Track**: Building using AMD Technologies & Smart Model Routing  
 **Hardware Cluster**: AMD Instinct™ MI300X (192GB HBM3, 5.3 TB/s)  
-**Software Stack**: AMD ROCm™ v6.2.1, PyTorch ROCm, Next.js 16 (Turbopack), TypeScript  
+**Software Stack**: AMD ROCm™ v6.2.1, PyTorch ROCm, Next.js 16 (Turbopack), Docker, TypeScript  
+**Docker Image**: `ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest`  
 
 ---
 
@@ -42,7 +43,45 @@ NeuralRoute AMD exposes live hardware telemetry through its AMD ROCm profiler (`
 
 ---
 
-### 5. Verification & Code Quality
-- **Automated Tests**: 7 / 7 Passing unit tests covering classifier scoring, routing policies, and telemetry.
+### 5. Automated Benchmark & Verification Suite
+- **Automated Tests**: 7 / 7 Passing unit tests covering classifier scoring, routing policies, and telemetry (`npm test`).
+- **10/10 Evaluation Scenarios**: End-to-end benchmark across HIP kernels, PDE proofs, data analysis, and system checks (`npm run evaluate`).
 - **Production Build**: Clean Next.js 16 Turbopack production compilation.
 - **Developer API**: REST JSON endpoint `POST /api/route` ready for multi-tenant microservice integration.
+
+---
+
+### 6. AMD Evaluator Quickstart & Docker Deployment
+
+The project is fully containerized and hosted publicly on GitHub Container Registry (GHCR) for automated benchmarking by AMD evaluation clusters.
+
+#### A. Pull & Run Web Dashboard & REST API
+```bash
+# Pull the latest verified container
+docker pull ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest
+
+# Run on port 3000
+docker run -d -p 3000:3000 --name neuralroute-amd ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest
+
+# Open in browser or curl API
+curl http://localhost:3000/api/telemetry
+```
+
+#### B. Run Automated Evaluation Harness (Headless)
+AMD evaluators can execute the benchmark harness directly inside the container:
+```bash
+docker run --rm ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest npm run evaluate
+```
+
+#### C. Run Unit Test Suite
+```bash
+docker run --rm ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest npm test
+```
+
+---
+
+### 7. Submission Details
+- **Team Name**: sahariar-dev
+- **Participant**: Sahariar Hossain (@sahariar_hossain294)
+- **Container Registry**: `ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest`
+- **Repository**: [github.com/sahariarhossain524-sketch/neuralroute-amd](https://github.com/sahariarhossain524-sketch/neuralroute-amd)
