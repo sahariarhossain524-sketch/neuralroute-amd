@@ -1,0 +1,45 @@
+# Two-Tier Enterprise Deployment Spec for AMD ROCm Infrastructure
+# Architecture: Tier 1 Gateway Proxy + Tier 2 AMD ROCm vLLM Inference Backend
+
+version: '3.8'
+
+services:
+  # Tier 1: Smart Routing Gateway & Telemetry Dashboard (Node.js/TypeScript)
+  neuralroute-gateway:
+    image: ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest
+    container_name: neuralroute-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - AMD_ROCM_INFERENCE_URL=http://amd-rocm-vllm:8000/v1/chat/completions
+      - AMD_ROCM_METRICS_URL=http://amd-rocm-vllm:8000/metrics
+    depends_on:
+      - amd-rocm-vllm
+    restart: unless-stopped
+
+  # Tier 2: Official AMD ROCm vLLM Inference Engine (GPU-Accelerated)
+  # Hardware Target: AMD Instinct™ MI300X / MI250 (ROCm 6.2+)
+  amd-rocm-vllm:
+    image: rocm/vllm:latest
+    container_name: amd-rocm-vllm
+    ipc: host
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    security_opt:
+      - seccomp:unconfined
+    group_add:
+      - video
+      - render
+    ports:
+      - "8000:8000"
+    command: >
+      python3 -m vllm.entrypoints.openai.api_server
+      --model meta-llama/Meta-Llama-3-8B-Instruct
+      --port 8000
+      --max-model-len 8192
+      --dtype bfloat16
+      --trust-remote-code
+    restart: unless-stopped

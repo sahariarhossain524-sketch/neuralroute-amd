@@ -38,6 +38,7 @@ export function routePrompt(
   prompt: string,
   policy: RoutingPolicy = 'COST_OPTIMIZED'
 ): RouteDecision {
+  const startTime = performance.now();
   const complexity = analyzePromptComplexity(prompt);
   let selectedModel: TargetModel;
 
@@ -50,6 +51,9 @@ export function routePrompt(
     // ACCURACY_FIRST
     selectedModel = complexity.score >= 0.40 ? REGISTERED_MODELS[2] : REGISTERED_MODELS[0];
   }
+
+  // Measure actual router gateway dispatch overhead
+  const routingOverheadMs = Number((performance.now() - startTime).toFixed(3));
 
   // Separated Input / Output Token Pricing Math
   const inputTokens = complexity.estimatedTokens;
@@ -71,6 +75,9 @@ export function routePrompt(
     ? Number((((cloudEquivalentCost - actualCost) / cloudEquivalentCost) * 100).toFixed(1))
     : 0;
 
+  const estimatedTtftMs = selectedModel.avgLatencyMs;
+  const totalExecutionTimeMs = Number((routingOverheadMs + estimatedTtftMs).toFixed(1));
+
   return {
     id: `RTE-${Date.now().toString(36).toUpperCase()}`,
     prompt,
@@ -78,7 +85,9 @@ export function routePrompt(
     policy,
     complexity,
     tokenCount: totalTokens,
-    executionTimeMs: selectedModel.avgLatencyMs + Math.floor(Math.random() * 6),
+    executionTimeMs: totalExecutionTimeMs,
+    routingOverheadMs,
+    estimatedTtftMs,
     estimatedCost: actualCost,
     cloudEquivalentCost,
     dollarSaved,

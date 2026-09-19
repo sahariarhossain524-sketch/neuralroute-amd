@@ -28,6 +28,8 @@ export interface RouteDecision {
   complexity: PromptComplexity;
   tokenCount: number;
   executionTimeMs: number;
+  routingOverheadMs: number; // Real CPU latency to analyze and route (in ms)
+  estimatedTtftMs: number; // Hardware Time-To-First-Token (in ms)
   estimatedCost: number;
   cloudEquivalentCost: number;
   dollarSaved: number;
