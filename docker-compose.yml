@@ -22,8 +22,9 @@ services:
   # Tier 2: Official AMD ROCm vLLM Inference Engine (GPU-Accelerated)
   # Hardware Target: AMD Instinct™ MI300X / MI250 (ROCm 6.2+)
   amd-rocm-vllm:
-    image: rocm/vllm:latest
+    image: vllm/vllm-openai-rocm:latest
     container_name: amd-rocm-vllm
+
     ipc: host
     devices:
       - /dev/kfd:/dev/kfd

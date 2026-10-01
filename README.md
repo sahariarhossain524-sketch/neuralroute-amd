@@ -5,7 +5,7 @@
 **Track**: Building using AMD Technologies & Smart Model Routing  
 **Hardware Cluster**: AMD Instinct™ MI300X (192GB HBM3, 5.3 TB/s)  
 **Software Stack**: AMD ROCm™ v6.2.1, PyTorch ROCm, Next.js 16 (Turbopack), Docker, TypeScript  
-**Docker Image**: `ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest`  
+**Docker Image**: `ghcr.io/sahariarhossain524-sketch/neuralroute-amd:v1.0.0` (also available as `:latest`)  
 
 ---
 

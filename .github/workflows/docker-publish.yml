@@ -30,4 +30,8 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest
+          tags: |
+            ghcr.io/sahariarhossain524-sketch/neuralroute-amd:latest
+            ghcr.io/sahariarhossain524-sketch/neuralroute-amd:v1.0.0
+            ghcr.io/sahariarhossain524-sketch/neuralroute-amd:v1.0
+
